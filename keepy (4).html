@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keepy — Control de Gastos</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d1b3e;--bg2:#0a1530;--surface:#132044;--surface2:#1a2a56;
+  --border:rgba(255,255,255,0.10);--border2:rgba(255,255,255,0.18);
+  --text:#fff;--muted:#8fa8d0;--accent:#4fc3f7;--green:#69f0ae;
+  --purple:#ce93d8;--warm:#ffb74d;--red:#ef9a9a;--radius:16px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:20px 16px 40px;max-width:480px;margin:0 auto}
+h1{font-family:'DM Serif Display',serif;font-size:28px;font-weight:400;letter-spacing:-0.5px;color:#fff}
+.subtitle{font-size:11px;color:var(--muted);margin-top:2px;letter-spacing:.1em;text-transform:uppercase}
+header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-top:4px}
+.sec{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;font-weight:500}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px}
+
+/* Ingreso */
+.ingreso-row{display:flex;align-items:center;gap:8px;margin-bottom:16px;background:var(--surface2);border-radius:12px;padding:12px 14px;border:1px solid var(--border2)}
+.ingreso-row input{flex:1;background:transparent;border:none;outline:none;color:#fff;font-family:'Arial Black','Arial',sans-serif;font-size:22px;font-weight:900}
+.ingreso-row input::placeholder{color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:400;font-size:16px}
+.cur{font-size:15px;color:var(--muted)}
+.slider-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.slider-label span{font-size:12px;color:var(--muted)}
+.pct-badge{font-family:'Arial Black','Arial',sans-serif;font-size:15px;font-weight:900;color:#fff;background:rgba(206,147,216,.2);padding:3px 12px;border-radius:20px;border:1px solid rgba(206,147,216,.3)}
+input[type=range]{width:100%;accent-color:var(--purple)}
+.pf-bar{display:flex;height:12px;border-radius:8px;overflow:hidden;margin:14px 0 12px;gap:3px}
+.pf-save{background:linear-gradient(90deg,#9c27b0,#ce93d8);transition:width .4s}
+.pf-spend{background:linear-gradient(90deg,#1565c0,#4fc3f7);transition:width .4s}
+.pf-amounts{display:flex;justify-content:space-between;margin-bottom:12px}
+.pf-item .pf-val{font-family:'Arial Black','Arial',sans-serif;font-size:20px;font-weight:900;display:block;letter-spacing:-0.5px}
+.pf-item .pf-lbl{font-size:11px;color:var(--muted);margin-top:3px;display:block}
+.pf-item.save .pf-val{color:var(--purple)}
+.pf-item.spend .pf-val{color:var(--accent)}
+.pf-note{font-size:12px;color:var(--muted);background:rgba(206,147,216,.07);border:1px solid rgba(206,147,216,.18);border-radius:10px;padding:10px 12px;line-height:1.65}
+.pf-note strong{color:var(--purple)}
+
+/* Balance */
+.balance-box{border:1px solid rgba(79,195,247,.25);background:linear-gradient(145deg,rgba(21,101,192,.35),rgba(13,27,62,.6));border-radius:var(--radius);padding:20px 18px 16px;margin-bottom:20px;position:relative;overflow:hidden}
+.balance-box::before{content:'';position:absolute;top:-40px;right:-40px;width:120px;height:120px;border-radius:50%;background:rgba(79,195,247,.06);pointer-events:none}
+.bal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.bal-title{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+.bal-badge{font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(79,195,247,.12);color:var(--accent);border:1px solid rgba(79,195,247,.25);text-transform:uppercase;letter-spacing:.05em}
+.bal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.bal-item{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px 14px}
+.bal-item .bv{font-family:'Arial Black','Arial',sans-serif;font-size:20px;font-weight:900;color:#fff;letter-spacing:-0.5px}
+.bal-item .bl{font-size:10px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.06em}
+.bv.green{color:var(--green)}.bv.purple{color:var(--purple)}.bv.warm{color:var(--warm)}.bv.red{color:var(--red)}.bv.blue{color:var(--accent)}
+hr.sep{border:none;border-top:1px solid rgba(255,255,255,.08);margin:12px 0}
+.bal-total{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.bt-label{font-size:12px;color:var(--muted)}
+.bt-val{font-family:'Arial Black','Arial',sans-serif;font-size:30px;font-weight:900;letter-spacing:-1px}
+.bal-hint{background:rgba(79,195,247,.07);border:1px solid rgba(79,195,247,.2);border-radius:10px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start}
+.bal-hint-icon{font-size:20px;flex-shrink:0}
+.bal-hint-text{font-size:12px;color:var(--muted);line-height:1.7}
+.bal-hint-text strong{color:var(--accent)}
+
+/* Activar Keepy */
+.keepy-activar{
+  background:linear-gradient(135deg,#1565c0,#0d47a1);
+  border:2px solid rgba(79,195,247,.4);
+  border-radius:20px;padding:24px 18px;margin-bottom:20px;
+  text-align:center;cursor:pointer;transition:all .25s;
+  position:relative;overflow:hidden;
+  -webkit-tap-highlight-color:transparent;
+}
+.keepy-activar:hover{border-color:var(--accent);transform:scale(1.01)}
+.keepy-activar.activo{background:linear-gradient(135deg,#0a3d1a,#1b5e20);border-color:var(--green);cursor:default}
+.keepy-activar.activo:hover{transform:none}
+.ka-icon{font-size:48px;margin-bottom:8px;display:block}
+.ka-titulo{font-family:'Arial Black','Arial',sans-serif;font-size:18px;font-weight:900;color:#fff;margin-bottom:6px}
+.ka-sub{font-size:13px;color:var(--muted);line-height:1.6}
+.ka-sub strong{color:var(--accent)}
+.ka-estado{margin-top:16px;display:inline-flex;align-items:center;gap:8px;background:rgba(0,0,0,.2);border-radius:20px;padding:7px 16px;font-size:12px;color:var(--muted)}
+.ka-dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex-shrink:0}
+.ka-dot.verde{background:var(--green);animation:blink 2s infinite}
+.ka-dot.rojo{background:var(--red)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* Feedback voz */
+.voz-feedback{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px;display:none}
+.voz-feedback.visible{display:block}
+.vf-steps{display:flex;gap:6px;margin-bottom:8px}
+.vf-step{flex:1;text-align:center;padding:8px 4px;border-radius:8px;background:var(--surface2);font-size:11px;color:var(--muted);transition:all .3s}
+.vf-step.activo{background:rgba(79,195,247,.15);color:var(--accent);font-weight:600;border:1px solid rgba(79,195,247,.3)}
+.vf-step.hecho{background:rgba(105,240,174,.1);color:var(--green);font-weight:600}
+.vf-msg{font-size:13px;color:var(--muted);text-align:center}
+.vf-msg strong{color:#fff}
+
+/* Chart */
+.chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:20px}
+.chart-bars{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.bar-row{display:flex;align-items:center;gap:10px}
+.bar-label{font-size:12px;color:var(--muted);width:90px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{flex:1;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .5s ease}
+.bar-val{font-size:12px;color:#fff;font-weight:500;width:54px;text-align:right}
+
+/* Gastos */
+.gastos-list{display:flex;flex-direction:column;gap:8px}
+.gasto-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;animation:slideIn .3s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.gasto-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.gasto-info{flex:1}
+.gasto-concepto{font-size:14px;font-weight:500;color:#fff}
+.gasto-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.gasto-monto{font-size:14px;font-weight:500;color:#fff}
+.gasto-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:4px;line-height:1}
+.gasto-del:hover{color:var(--red)}
+.empty-state{text-align:center;padding:28px 16px;color:var(--muted);font-size:14px}
+
+.manual-btn{display:block;width:100%;padding:13px;margin-top:10px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);color:var(--muted);font-size:13px;cursor:pointer;text-align:center;transition:all .2s}
+.manual-btn:hover{border-color:var(--accent);color:#fff}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:24px;width:100%;max-width:420px}
+.modal h3{font-family:'DM Serif Display',serif;font-size:20px;font-weight:400;margin-bottom:16px;color:#fff}
+.mf{margin-bottom:14px}
+.mf label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px}
+.mf input,.mf select{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:11px 12px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none}
+.mf input:focus,.mf select:focus{border-color:var(--accent)}
+.mf select option{background:var(--bg2)}
+.modal-actions{display:flex;gap:10px;margin-top:20px}
+.btn-p{flex:1;padding:13px;background:linear-gradient(135deg,#1565c0,#4fc3f7);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer}
+.btn-s{padding:13px 18px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:10px;font-size:14px;cursor:pointer}
+
+/* Toast */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(90px);background:#1b5e20;border:1px solid var(--green);border-radius:12px;padding:13px 22px;font-size:14px;color:#fff;font-weight:500;z-index:200;transition:transform .35s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;max-width:90vw;text-align:center}
+.toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Keepy</h1>
+    <div class="subtitle">Profit First · Control de gastos</div>
+  </div>
+</header>
+
+<!-- Ingreso -->
+<div class="sec">① Ingreso recibido — aparta el ahorro primero</div>
+<div class="card">
+  <div class="ingreso-row">
+    <span class="cur">$</span>
+    <input type="number" id="ingresoInput" placeholder="Ingreso del mes" oninput="actualizarTodo()">
+    <span class="cur">MXN</span>
+  </div>
+  <div class="slider-label">
+    <span>% de ahorro (Profit First)</span>
+    <span class="pct-badge" id="pctBadge">10%</span>
+  </div>
+  <input type="range" id="ahorroSlider" min="0" max="50" value="10" oninput="actualizarTodo()">
+  <div class="pf-bar">
+    <div class="pf-save" id="pfSave" style="width:10%"></div>
+    <div class="pf-spend" id="pfSpend" style="width:90%"></div>
+  </div>
+  <div class="pf-amounts">
+    <div class="pf-item save">
+      <span class="pf-val" id="pfSaveAmt">$0</span>
+      <span class="pf-lbl">🔒 Aparta YA al ahorro</span>
+    </div>
+    <div class="pf-item spend" style="text-align:right">
+      <span class="pf-val" id="pfSpendAmt">$0</span>
+      <span class="pf-lbl">Disponible para gastar</span>
+    </div>
+  </div>
+  <div class="pf-note">
+    <strong>Profit First:</strong> Al recibir tu ingreso, transfiere inmediatamente <strong id="pfNoteAmt">$0</strong> a una cuenta separada de ahorro. Solo lo que queda es lo que puedes gastar este mes.
+  </div>
+</div>
+
+<!-- Balance -->
+<div class="sec">Balance del mes</div>
+<div class="balance-box">
+  <div class="bal-header">
+    <div class="bal-title">Estado actual</div>
+    <div class="bal-badge">En tiempo real</div>
+  </div>
+  <div class="bal-grid">
+    <div class="bal-item"><div class="bv green" id="bIngreso">$0</div><div class="bl">Ingreso total</div></div>
+    <div class="bal-item"><div class="bv purple" id="bAhorro">$0</div><div class="bl">Apartado ahorro</div></div>
+    <div class="bal-item"><div class="bv warm" id="bGastos">$0</div><div class="bl">Gastos registrados</div></div>
+    <div class="bal-item"><div class="bv blue" id="bDisp">$0</div><div class="bl">Aún disponible</div></div>
+  </div>
+  <hr class="sep">
+  <div class="bal-total">
+    <div class="bt-label">Saldo estimado en cuenta bancaria</div>
+    <div class="bt-val" id="bSaldo">$0</div>
+  </div>
+  <div class="bal-hint">
+    <div class="bal-hint-icon">🏦</div>
+    <div class="bal-hint-text">
+      <strong>Compara este saldo con el balance de tu cuenta bancaria</strong> — ambos deben coincidir aproximadamente. Si hay diferencia, puede haber gastos sin registrar o cargos automáticos olvidados.
+    </div>
+  </div>
+</div>
+
+<!-- Activar Keepy -->
+<div class="sec">② Activar escucha de voz</div>
+<div class="keepy-activar" id="keepyBtn" onclick="activarKeepy()">
+  <span class="ka-icon" id="kaIcon">🎙️</span>
+  <div class="ka-titulo" id="kaTitulo">Toca para activar Keepy</div>
+  <div class="ka-sub" id="kaSub">Un solo toque y Keepy queda escuchando todo el día.<br>Di <strong>"Keepy, registrar"</strong> cuando tengas un gasto.</div>
+  <div class="ka-estado">
+    <div class="ka-dot" id="kaDot"></div>
+    <span id="kaEstado">Inactiva</span>
+  </div>
+</div>
+
+<!-- Feedback voz -->
+<div class="voz-feedback" id="vozFeedback">
+  <div class="vf-steps">
+    <div class="vf-step" id="vfs1">💰 Monto</div>
+    <div class="vf-step" id="vfs2">🛒 Concepto</div>
+    <div class="vf-step" id="vfs3">📂 Categoría</div>
+  </div>
+  <div class="vf-msg" id="vfMsg">Escuchando...</div>
+</div>
+
+<!-- Debug box -->
+<div class="card" id="debugBox" style="border-color:rgba(255,183,77,.3);margin-bottom:16px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <span class="sec" style="margin:0">🔍 Lo que Keepy escucha</span>
+    <span style="font-size:10px;color:var(--muted)">Ayuda para calibrar la voz</span>
+  </div>
+  <div id="debugTxt" style="font-size:13px;color:var(--warm);min-height:20px;font-style:italic">— esperando voz —</div>
+  <div id="debugPaso" style="font-size:11px;color:var(--muted);margin-top:6px">Paso: esperando comando</div>
+</div>
+
+<!-- Gráfica -->
+<div class="chart-wrap">
+  <div class="sec" style="margin-bottom:0">Gastos por categoría</div>
+  <div class="chart-bars" id="chartBars"><div class="empty-state">Sin gastos aún</div></div>
+</div>
+
+<!-- Lista -->
+<div class="sec">Últimos gastos</div>
+<div class="gastos-list" id="gastosList">
+  <div class="empty-state">Registra tu primer gasto con voz 🎙️</div>
+</div>
+<button class="manual-btn" onclick="abrirModal()">+ Registrar gasto manualmente</button>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3>Registrar gasto</h3>
+    <div class="mf"><label>Monto (MXN)</label><input type="number" id="mMonto" placeholder="0.00"></div>
+    <div class="mf"><label>Concepto</label><input type="text" id="mConcepto" placeholder="ej. café, gasolina..."></div>
+    <div class="mf">
+      <label>Categoría</label>
+      <select id="mCat"></select>
+      <input type="text" id="mCatNew" placeholder="o escribe una nueva..." style="margin-top:8px;display:none">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-s" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn-p" onclick="guardarManual()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let gastos=JSON.parse(localStorage.getItem('keepy_gastos')||'[]');
+let conceptoCat=JSON.parse(localStorage.getItem('keepy_cc')||'{}');
+let ingreso=parseFloat(localStorage.getItem('keepy_ing')||'0');
+let ahorroPct=parseInt(localStorage.getItem('keepy_pct')||'10');
+
+const CAT_COLORS={'Comida':'#ffb74d','Transporte':'#4fc3f7','Entretenimiento':'#ce93d8','Salud':'#ef9a9a','Hogar':'#69f0ae','Ropa':'#f48fb1','Educación':'#80cbc4','Servicios':'#90a4ae','Otros':'#78909c'};
+const colorOf=cat=>CAT_COLORS[cat]||'#'+Math.abs(cat.split('').reduce((a,c)=>a*31+c.charCodeAt(0)|0,0)).toString(16).padStart(6,'0').slice(0,6);
+const fmt=n=>'$'+Math.abs(n).toLocaleString('es-MX',{minimumFractionDigits:0,maximumFractionDigits:0});
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+const save=()=>{
+  localStorage.setItem('keepy_gastos',JSON.stringify(gastos));
+  localStorage.setItem('keepy_cc',JSON.stringify(conceptoCat));
+  localStorage.setItem('keepy_ing',ingreso);
+  localStorage.setItem('keepy_pct',ahorroPct);
+};
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+function actualizarTodo(){
+  ingreso=parseFloat(document.getElementById('ingresoInput').value)||0;
+  ahorroPct=parseInt(document.getElementById('ahorroSlider').value);
+  document.getElementById('pctBadge').textContent=ahorroPct+'%';
+  const aho=ingreso*ahorroPct/100;
+  const dispB=ingreso-aho;
+  const totalG=gastos.reduce((s,g)=>s+g.monto,0);
+  const dispR=dispB-totalG;
+  const saldo=ingreso-aho-totalG;
+  document.getElementById('pfSave').style.width=ahorroPct+'%';
+  document.getElementById('pfSpend').style.width=(100-ahorroPct)+'%';
+  document.getElementById('pfSaveAmt').textContent=fmt(aho);
+  document.getElementById('pfSpendAmt').textContent=fmt(dispB);
+  document.getElementById('pfNoteAmt').textContent=fmt(aho);
+  document.getElementById('bIngreso').textContent=fmt(ingreso);
+  document.getElementById('bAhorro').textContent=fmt(aho);
+  document.getElementById('bGastos').textContent=fmt(totalG);
+  const dispEl=document.getElementById('bDisp');
+  dispEl.textContent=fmt(Math.max(0,dispR));
+  dispEl.className='bv '+(dispR<0?'red':dispR<dispB*0.1?'warm':'blue');
+  const sEl=document.getElementById('bSaldo');
+  sEl.textContent=(saldo<0?'-':'')+fmt(saldo);
+  sEl.style.color=saldo<0?'var(--red)':saldo<ingreso*0.05?'var(--warm)':'var(--green)';
+  save();
+}
+
+function renderGastos(){
+  const el=document.getElementById('gastosList');
+  if(!gastos.length){el.innerHTML='<div class="empty-state">Registra tu primer gasto con voz 🎙️</div>';return;}
+  el.innerHTML=[...gastos].reverse().slice(0,20).map((g,i)=>`
+    <div class="gasto-item">
+      <div class="gasto-dot" style="background:${colorOf(g.categoria)}"></div>
+      <div class="gasto-info">
+        <div class="gasto-concepto">${g.concepto}</div>
+        <div class="gasto-meta">${g.categoria} · ${g.fecha}</div>
+      </div>
+      <div class="gasto-monto">${fmt(g.monto)}</div>
+      <button class="gasto-del" onclick="eliminar(${gastos.length-1-i})">×</button>
+    </div>`).join('');
+}
+
+function renderChart(){
+  const cats={};
+  gastos.forEach(g=>cats[g.categoria]=(cats[g.categoria]||0)+g.monto);
+  const el=document.getElementById('chartBars');
+  if(!Object.keys(cats).length){el.innerHTML='<div class="empty-state">Sin gastos aún</div>';return;}
+  const max=Math.max(...Object.values(cats));
+  el.innerHTML=Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([cat,val])=>`
+    <div class="bar-row">
+      <div class="bar-label">${cat}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${val/max*100}%;background:${colorOf(cat)}"></div></div>
+      <div class="bar-val">${fmt(val)}</div>
+    </div>`).join('');
+}
+
+function eliminar(idx){gastos.splice(idx,1);save();renderGastos();renderChart();actualizarTodo();}
+
+function agregarGasto(monto,concepto,categoria){
+  conceptoCat[concepto.toLowerCase()]=categoria;
+  const hoy=new Date();
+  gastos.push({monto,concepto,categoria,fecha:hoy.toLocaleDateString('es-MX',{day:'2-digit',month:'short'})});
+  save();renderGastos();renderChart();actualizarTodo();actualizarSelect();
+  toast('✅ '+cap(concepto)+' — '+fmt(monto)+' en '+categoria);
+}
+
+function getCats(){
+  const base=Object.keys(CAT_COLORS);
+  const custom=[...new Set(gastos.map(g=>g.categoria))].filter(c=>!base.includes(c));
+  return [...base,...custom];
+}
+function actualizarSelect(){
+  const sel=document.getElementById('mCat');
+  sel.innerHTML='<option value="">— selecciona —</option>'+
+    getCats().map(c=>`<option value="${c}">${c}</option>`).join('')+
+    '<option value="__new">+ Nueva categoría...</option>';
+  sel.onchange=()=>{document.getElementById('mCatNew').style.display=sel.value==='__new'?'block':'none';};
+}
+function abrirModal(){document.getElementById('modalOverlay').classList.add('open');}
+function cerrarModal(){document.getElementById('modalOverlay').classList.remove('open');document.getElementById('mCatNew').style.display='none';}
+function guardarManual(){
+  const monto=parseFloat(document.getElementById('mMonto').value);
+  const concepto=document.getElementById('mConcepto').value.trim();
+  let cat=document.getElementById('mCat').value;
+  if(cat==='__new')cat=document.getElementById('mCatNew').value.trim();
+  if(!monto||!concepto||!cat){alert('Completa todos los campos');return;}
+  agregarGasto(monto,concepto,cat);
+  cerrarModal();
+  document.getElementById('mMonto').value='';
+  document.getElementById('mConcepto').value='';
+}
+
+// ── VOZ ──────────────────────────────────────────────────────
+let rec=null,keepyActiva=false,vStep=0,vMonto=null,vConcepto=null;
+let bloqueado=false; // evita que Keepy se escuche a sí misma
+
+function setVFeedback(step,msg){
+  const fb=document.getElementById('vozFeedback');
+  if(step===0){fb.classList.remove('visible');return;}
+  fb.classList.add('visible');
+  [1,2,3].forEach(i=>{
+    const el=document.getElementById('vfs'+i);
+    el.className='vf-step'+(i<step?' hecho':i===step?' activo':'');
+  });
+  if(msg) document.getElementById('vfMsg').innerHTML=msg;
+}
+
+function setEstado(txt,dotClass){
+  document.getElementById('kaEstado').textContent=txt;
+  if(dotClass) document.getElementById('kaDot').className='ka-dot '+dotClass;
+}
+
+function activarKeepy(){
+  if(keepyActiva) return;
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){
+    setEstado('Navegador no compatible — usa Chrome','rojo');
+    return;
+  }
+  if(!rec) rec=initRec();
+  try{
+    rec.start();
+    keepyActiva=true;
+    const btn=document.getElementById('keepyBtn');
+    btn.classList.add('activo');
+    document.getElementById('kaIcon').textContent='👂';
+    document.getElementById('kaTitulo').textContent='Keepy está escuchando';
+    document.getElementById('kaSub').innerHTML='Di <strong>"Keepy, registrar"</strong> en cualquier momento.<br>No necesitas tocar nada más.';
+    setEstado('Escuchando activamente','verde');
+  }catch(e){
+    setEstado('Error al activar: '+e.message,'rojo');
+  }
+}
+
+function initRec(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const r=new SR();
+  r.lang='es-MX';r.continuous=true;r.interimResults=false;
+  r.onresult=e=>{
+    const t=e.results[e.results.length-1][0].transcript.trim().toLowerCase();
+    procesarVoz(t);
+  };
+  r.onerror=e=>{
+    if(e.error==='no-speech'||e.error==='aborted') return;
+    setEstado('Error: '+e.error+' — recargando...','rojo');
+    setTimeout(()=>{if(keepyActiva)try{r.start();setEstado('Escuchando activamente','verde');}catch(ex){}},1500);
+  };
+  r.onend=()=>{
+    if(keepyActiva){
+      setTimeout(()=>{try{r.start();}catch(ex){}},300);
+    }
+  };
+  return r;
+}
+
+function procesarVoz(txt){
+  // Ignorar si Keepy está hablando (evita que se escuche a sí misma)
+  if(bloqueado) return;
+
+  // Mostrar siempre lo que escucha
+  document.getElementById('debugTxt').textContent = '"' + txt + '"';
+  const pasos = ['esperando comando','esperando monto','esperando concepto','esperando categoría'];
+  document.getElementById('debugPaso').textContent = 'Paso actual: ' + pasos[vStep];
+
+  // Normalizar texto
+  const t = txt.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'') // quitar acentos
+    .replace(/[¿?¡!.,]/g,'').trim();
+
+  if(vStep===0){
+    // Muy tolerante: cualquier variación de "keepy" + acción
+    const tieneKeepy = t.includes('keepy') || t.includes('kepy') || t.includes('kipy') || t.includes('keep');
+    const tieneAccion = t.includes('registrar') || t.includes('registra') || t.includes('registro')
+      || t.includes('anotar') || t.includes('apuntar') || t.includes('gasto') || t.includes('agregar');
+    if(tieneKeepy && tieneAccion){
+      vStep=1;
+      setVFeedback(1,'Di el <strong>monto</strong> del gasto');
+      setEstado('✅ Comando recibido — di el monto','verde');
+      hablar('Listo, ¿cuánto gastaste?');
+    } else if(tieneKeepy) {
+      // Escuchó "keepy" pero no la acción — dar feedback
+      document.getElementById('debugPaso').textContent = 'Escuché "keepy" — falta la acción (di "registrar")';
+    }
+    return;
+  }
+  if(vStep===1){
+    const n=extraerNum(t);
+    if(n){
+      vMonto=n;vStep=2;
+      setVFeedback(2,'Monto: <strong>'+fmt(n)+'</strong> — di el <strong>concepto</strong>');
+      setEstado('Monto OK — di el concepto','verde');
+      hablar('¿En qué fue el gasto?');
+    }else{
+      document.getElementById('debugPaso').textContent = 'No encontré número en: "'+t+'" — intenta de nuevo';
+      setVFeedback(1,'No entendí el número. Di solo el monto, ej: <strong>"150"</strong> o <strong>"ciento cincuenta"</strong>');
+      hablar('No entendí, di el monto');
+    }
+    return;
+  }
+  if(vStep===2){
+    vConcepto = t.replace(/pesos|peso|mxn/gi,'').trim();
+    const cg = conceptoCat[vConcepto.toLowerCase()];
+    if(cg){
+      agregarGasto(vMonto,cap(vConcepto),cg);
+      vStep=0;setVFeedback(0);
+      setEstado('Escuchando activamente','verde');
+      hablar('Registrado en '+cg);
+    }else{
+      vStep=3;
+      setVFeedback(3,'Concepto: <strong>'+cap(vConcepto)+'</strong> — di la <strong>categoría</strong>');
+      setEstado('Di la categoría','verde');
+      hablar('¿A qué categoría lo asigno?');
+    }
+    return;
+  }
+  if(vStep===3){
+    let cat=cap(t.trim());
+    const match=getCats().find(c=>
+      t.includes(c.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')) ||
+      c.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(t)
+    );
+    if(match)cat=match;
+    agregarGasto(vMonto,cap(vConcepto),cat);
+    vStep=0;setVFeedback(0);
+    setEstado('Escuchando activamente','verde');
+    hablar('Listo, registrado en '+cat);
+  }
+}
+
+function extraerNum(txt){
+  const d=txt.match(/[\d,]+\.?\d*/);
+  if(d)return parseFloat(d[0].replace(',',''));
+  const map={cero:0,un:1,uno:1,dos:2,tres:3,cuatro:4,cinco:5,seis:6,siete:7,ocho:8,nueve:9,diez:10,once:11,doce:12,trece:13,catorce:14,quince:15,dieciséis:16,diecisiete:17,dieciocho:18,diecinueve:19,veinte:20,veintiuno:21,veintidós:22,veintitrés:23,veinticuatro:24,veinticinco:25,veintiséis:26,veintisiete:27,veintiocho:28,veintinueve:29,treinta:30,cuarenta:40,cincuenta:50,sesenta:60,setenta:70,ochenta:80,noventa:90,cien:100,ciento:100,doscientos:200,trescientos:300,cuatrocientos:400,quinientos:500,seiscientos:600,setecientos:700,ochocientos:800,novecientos:900,mil:1000};
+  let n=0,c=0;
+  txt.split(/\s+/).forEach(w=>{
+    const v=map[w.replace(/[^a-záéíóúü]/gi,'').toLowerCase()];
+    if(v!=null){if(v>=1000){n=(n||1)*v;c=0;}else if(v>=100){c=(c||1)*v;}else c+=v;}
+  });
+  n+=c;return n>0?n:null;
+}
+
+function hablar(t){
+  if(!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  bloqueado = true; // bloquear micrófono mientras habla
+  const u = new SpeechSynthesisUtterance(t);
+  u.lang='es-MX'; u.rate=1.05; u.volume=0.85;
+  u.onend = () => {
+    // Desbloquear 800ms después de que termina de hablar
+    setTimeout(() => { bloqueado = false; }, 800);
+  };
+  window.speechSynthesis.speak(u);
+}
+
+function init(){
+  document.getElementById('ingresoInput').value=ingreso||'';
+  document.getElementById('ahorroSlider').value=ahorroPct;
+  actualizarTodo();renderGastos();renderChart();actualizarSelect();
+}
+init();
+</script>
+</body>
+</html>
