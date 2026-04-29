@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keepy — Control de Gastos</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d1b3e;--bg2:#0a1530;--surface:#132044;--surface2:#1a2a56;
+  --border:rgba(255,255,255,0.10);--border2:rgba(255,255,255,0.18);
+  --text:#fff;--muted:#8fa8d0;--accent:#4fc3f7;--green:#69f0ae;
+  --purple:#ce93d8;--warm:#ffb74d;--red:#ef9a9a;--radius:16px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:20px 16px 40px;max-width:480px;margin:0 auto}
+h1{font-family:'DM Serif Display',serif;font-size:28px;font-weight:400;letter-spacing:-0.5px;color:#fff}
+.subtitle{font-size:11px;color:var(--muted);margin-top:2px;letter-spacing:.1em;text-transform:uppercase}
+header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-top:4px}
+.sec{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;font-weight:500}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px}
+
+/* Ingreso */
+.ingreso-row{display:flex;align-items:center;gap:8px;margin-bottom:16px;background:var(--surface2);border-radius:12px;padding:12px 14px;border:1px solid var(--border2)}
+.ingreso-row input{flex:1;background:transparent;border:none;outline:none;color:#fff;font-family:'Arial Black','Arial',sans-serif;font-size:22px;font-weight:900}
+.ingreso-row input::placeholder{color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:400;font-size:16px}
+.cur{font-size:15px;color:var(--muted)}
+.slider-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.slider-label span{font-size:12px;color:var(--muted)}
+.pct-badge{font-family:'Arial Black','Arial',sans-serif;font-size:15px;font-weight:900;color:#fff;background:rgba(206,147,216,.2);padding:3px 12px;border-radius:20px;border:1px solid rgba(206,147,216,.3)}
+input[type=range]{width:100%;accent-color:var(--purple)}
+.pf-bar{display:flex;height:12px;border-radius:8px;overflow:hidden;margin:14px 0 12px;gap:3px}
+.pf-save{background:linear-gradient(90deg,#9c27b0,#ce93d8);transition:width .4s}
+.pf-spend{background:linear-gradient(90deg,#1565c0,#4fc3f7);transition:width .4s}
+.pf-amounts{display:flex;justify-content:space-between;margin-bottom:12px}
+.pf-item .pf-val{font-family:'Arial Black','Arial',sans-serif;font-size:20px;font-weight:900;display:block;letter-spacing:-0.5px}
+.pf-item .pf-lbl{font-size:11px;color:var(--muted);margin-top:3px;display:block}
+.pf-item.save .pf-val{color:var(--purple)}
+.pf-item.spend .pf-val{color:var(--accent)}
+.pf-note{font-size:12px;color:var(--muted);background:rgba(206,147,216,.07);border:1px solid rgba(206,147,216,.18);border-radius:10px;padding:10px 12px;line-height:1.65}
+.pf-note strong{color:var(--purple)}
+
+/* Balance */
+.balance-box{border:1px solid rgba(79,195,247,.25);background:linear-gradient(145deg,rgba(21,101,192,.35),rgba(13,27,62,.6));border-radius:var(--radius);padding:20px 18px 16px;margin-bottom:20px;position:relative;overflow:hidden}
+.balance-box::before{content:'';position:absolute;top:-40px;right:-40px;width:120px;height:120px;border-radius:50%;background:rgba(79,195,247,.06);pointer-events:none}
+.bal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.bal-title{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+.bal-badge{font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(79,195,247,.12);color:var(--accent);border:1px solid rgba(79,195,247,.25);text-transform:uppercase;letter-spacing:.05em}
+.bal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.bal-item{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px 14px}
+.bal-item .bv{font-family:'Arial Black','Arial',sans-serif;font-size:20px;font-weight:900;color:#fff;letter-spacing:-0.5px}
+.bal-item .bl{font-size:10px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.06em}
+.bv.green{color:var(--green)}.bv.purple{color:var(--purple)}.bv.warm{color:var(--warm)}.bv.red{color:var(--red)}.bv.blue{color:var(--accent)}
+hr.sep{border:none;border-top:1px solid rgba(255,255,255,.08);margin:12px 0}
+.bal-total{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.bt-label{font-size:12px;color:var(--muted)}
+.bt-val{font-family:'Arial Black','Arial',sans-serif;font-size:30px;font-weight:900;letter-spacing:-1px}
+.bal-hint{background:rgba(79,195,247,.07);border:1px solid rgba(79,195,247,.2);border-radius:10px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start}
+.bal-hint-icon{font-size:20px;flex-shrink:0}
+.bal-hint-text{font-size:12px;color:var(--muted);line-height:1.7}
+.bal-hint-text strong{color:var(--accent)}
+
+/* Activar Keepy */
+.keepy-activar{
+  background:linear-gradient(135deg,#1565c0,#0d47a1);
+  border:2px solid rgba(79,195,247,.4);
+  border-radius:20px;padding:24px 18px;margin-bottom:20px;
+  text-align:center;cursor:pointer;transition:all .25s;
+  position:relative;overflow:hidden;
+  -webkit-tap-highlight-color:transparent;
+}
+.keepy-activar:hover{border-color:var(--accent);transform:scale(1.01)}
+.keepy-activar.activo{background:linear-gradient(135deg,#0a3d1a,#1b5e20);border-color:var(--green);cursor:default}
+.keepy-activar.activo:hover{transform:none}
+.ka-icon{font-size:48px;margin-bottom:8px;display:block}
+.ka-titulo{font-family:'Arial Black','Arial',sans-serif;font-size:18px;font-weight:900;color:#fff;margin-bottom:6px}
+.ka-sub{font-size:13px;color:var(--muted);line-height:1.6}
+.ka-sub strong{color:var(--accent)}
+.ka-estado{margin-top:16px;display:inline-flex;align-items:center;gap:8px;background:rgba(0,0,0,.2);border-radius:20px;padding:7px 16px;font-size:12px;color:var(--muted)}
+.ka-dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex-shrink:0}
+.ka-dot.verde{background:var(--green);animation:blink 2s infinite}
+.ka-dot.rojo{background:var(--red)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* Feedback voz */
+.voz-feedback{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px;display:none}
+.voz-feedback.visible{display:block}
+.vf-steps{display:flex;gap:6px;margin-bottom:8px}
+.vf-step{flex:1;text-align:center;padding:8px 4px;border-radius:8px;background:var(--surface2);font-size:11px;color:var(--muted);transition:all .3s}
+.vf-step.activo{background:rgba(79,195,247,.15);color:var(--accent);font-weight:600;border:1px solid rgba(79,195,247,.3)}
+.vf-step.hecho{background:rgba(105,240,174,.1);color:var(--green);font-weight:600}
+.vf-msg{font-size:13px;color:var(--muted);text-align:center}
+.vf-msg strong{color:#fff}
+
+/* Chart */
+.chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:20px}
+.chart-bars{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.bar-row{display:flex;align-items:center;gap:10px}
+.bar-label{font-size:12px;color:var(--muted);width:90px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{flex:1;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .5s ease}
+.bar-val{font-size:12px;color:#fff;font-weight:500;width:54px;text-align:right}
+
+/* Gastos */
+.gastos-list{display:flex;flex-direction:column;gap:8px}
+.gasto-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;animation:slideIn .3s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.gasto-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.gasto-info{flex:1}
+.gasto-concepto{font-size:14px;font-weight:500;color:#fff}
+.gasto-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.gasto-monto{font-size:14px;font-weight:500;color:#fff}
+.gasto-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:4px;line-height:1}
+.gasto-del:hover{color:var(--red)}
+.empty-state{text-align:center;padding:28px 16px;color:var(--muted);font-size:14px}
+
+.manual-btn{display:block;width:100%;padding:13px;margin-top:10px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);color:var(--muted);font-size:13px;cursor:pointer;text-align:center;transition:all .2s}
+.manual-btn:hover{border-color:var(--accent);color:#fff}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:24px;width:100%;max-width:420px}
+.modal h3{font-family:'DM Serif Display',serif;font-size:20px;font-weight:400;margin-bottom:16px;color:#fff}
+.mf{margin-bottom:14px}
+.mf label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px}
+.mf input,.mf select{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:11px 12px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none}
+.mf input:focus,.mf select:focus{border-color:var(--accent)}
+.mf select option{background:var(--bg2)}
+.modal-actions{display:flex;gap:10px;margin-top:20px}
+.btn-p{flex:1;padding:13px;background:linear-gradient(135deg,#1565c0,#4fc3f7);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer}
+.btn-s{padding:13px 18px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:10px;font-size:14px;cursor:pointer}
+
+/* Toast */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(90px);background:#1b5e20;border:1px solid var(--green);border-radius:12px;padding:13px 22px;font-size:14px;color:#fff;font-weight:500;z-index:200;transition:transform .35s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;max-width:90vw;text-align:center}
+.toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Keepy</h1>
+    <div class="subtitle">Profit First · Control de gastos</div>
+  </div>
+</header>
+
+<!-- Ingreso -->
+<div class="sec">① Ingreso recibido — aparta el ahorro primero</div>
+<div class="card">
+  <div class="ingreso-row">
+    <span class="cur">$</span>
+    <input type="number" id="ingresoInput" placeholder="Ingreso del mes" oninput="actualizarTodo()">
+    <span class="cur">MXN</span>
+  </div>
+  <div class="slider-label">
+    <span>% de ahorro (Profit First)</span>
+    <span class="pct-badge" id="pctBadge">10%</span>
+  </div>
+  <input type="range" id="ahorroSlider" min="0" max="50" value="10" oninput="actualizarTodo()">
+  <div class="pf-bar">
+    <div class="pf-save" id="pfSave" style="width:10%"></div>
+    <div class="pf-spend" id="pfSpend" style="width:90%"></div>
+  </div>
+  <div class="pf-amounts">
+    <div class="pf-item save">
+      <span class="pf-val" id="pfSaveAmt">$0</span>
+      <span class="pf-lbl">🔒 Aparta YA al ahorro</span>
+    </div>
+    <div class="pf-item spend" style="text-align:right">
+      <span class="pf-val" id="pfSpendAmt">$0</span>
+      <span class="pf-lbl">Disponible para gastar</span>
+    </div>
+  </div>
+  <div class="pf-note">
+    <strong>Profit First:</strong> Al recibir tu ingreso, transfiere inmediatamente <strong id="pfNoteAmt">$0</strong> a una cuenta separada de ahorro. Solo lo que queda es lo que puedes gastar este mes.
+  </div>
+</div>
+
+<!-- Balance -->
+<div class="sec">Balance del mes</div>
+<div class="balance-box">
+  <div class="bal-header">
+    <div class="bal-title">Estado actual</div>
+    <div class="bal-badge">En tiempo real</div>
+  </div>
+  <div class="bal-grid">
+    <div class="bal-item"><div class="bv green" id="bIngreso">$0</div><div class="bl">Ingreso total</div></div>
+    <div class="bal-item"><div class="bv purple" id="bAhorro">$0</div><div class="bl">Apartado ahorro</div></div>
+    <div class="bal-item"><div class="bv warm" id="bGastos">$0</div><div class="bl">Gastos registrados</div></div>
+    <div class="bal-item"><div class="bv blue" id="bDisp">$0</div><div class="bl">Aún disponible</div></div>
+  </div>
+  <hr class="sep">
+  <div class="bal-total">
+    <div class="bt-label">Saldo estimado en cuenta bancaria</div>
+    <div class="bt-val" id="bSaldo">$0</div>
+  </div>
+  <div class="bal-hint">
+    <div class="bal-hint-icon">🏦</div>
+    <div class="bal-hint-text">
+      <strong>Compara este saldo con el balance de tu cuenta bancaria</strong> — ambos deben coincidir aproximadamente. Si hay diferencia, puede haber gastos sin registrar o cargos automáticos olvidados.
+    </div>
+  </div>
+</div>
+
+<!-- Activar Keepy -->
+<div class="sec">② Activar escucha de voz</div>
+<div class="keepy-activar" id="keepyBtn" onclick="activarKeepy()">
+  <span class="ka-icon" id="kaIcon">🎙️</span>
+  <div class="ka-titulo" id="kaTitulo">Toca para activar Keepy</div>
+  <div class="ka-sub" id="kaSub">Un solo toque y Keepy queda escuchando todo el día.<br>Di <strong>"Keepy, registrar"</strong> cuando tengas un gasto.</div>
+  <div class="ka-estado">
+    <div class="ka-dot" id="kaDot"></div>
+    <span id="kaEstado">Inactiva</span>
+  </div>
+</div>
+
+<!-- Feedback voz -->
+<div class="voz-feedback" id="vozFeedback">
+  <div class="vf-steps">
+    <div class="vf-step" id="vfs1">💰 Monto</div>
+    <div class="vf-step" id="vfs2">🛒 Concepto</div>
+    <div class="vf-step" id="vfs3">📂 Categoría</div>
+  </div>
+  <div class="vf-msg" id="vfMsg">Escuchando...</div>
+</div>
+
+<!-- Debug box -->
+<div class="card" id="debugBox" style="border-color:rgba(255,183,77,.3);margin-bottom:16px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <span class="sec" style="margin:0">🔍 Lo que Keepy escucha</span>
+    <span style="font-size:10px;color:var(--muted)">Ayuda para calibrar la voz</span>
+  </div>
+  <div id="debugTxt" style="font-size:13px;color:var(--warm);min-height:20px;font-style:italic">— esperando voz —</div>
+  <div id="debugPaso" style="font-size:11px;color:var(--muted);margin-top:6px">Paso: esperando comando</div>
+</div>
+
+<!-- Gráfica -->
+<div class="chart-wrap">
+  <div class="sec" style="margin-bottom:0">Gastos por categoría</div>
+  <div class="chart-bars" id="chartBars"><div class="empty-state">Sin gastos aún</div></div>
+</div>
+
+<!-- Lista -->
+<div class="sec">Últimos gastos</div>
+<div class="gastos-list" id="gastosList">
+  <div class="empty-state">Registra tu primer gasto con voz 🎙️</div>
+</div>
+<button class="manual-btn" onclick="abrirModal()">+ Registrar gasto manualmente</button>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3>Registrar gasto</h3>
+    <div class="mf"><label>Monto (MXN)</label><input type="number" id="mMonto" placeholder="0.00"></div>
+    <div class="mf"><label>Concepto</label><input type="text" id="mConcepto" placeholder="ej. café, gasolina..."></div>
+    <div class="mf">
+      <label>Categoría</label>
+      <select id="mCat"></select>
+      <input type="text" id="mCatNew" placeholder="o escribe una nueva..." style="margin-top:8px;display:none">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-s" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn-p" onclick="guardarManual()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let gastos=JSON.parse(localStorage.getItem('keepy_gastos')||'[]');
+let conceptoCat=JSON.parse(localStorage.getItem('keepy_cc')||'{}');
+let ingreso=parseFloat(localStorage.getItem('keepy_ing')||'0');
+let ahorroPct=parseInt(localStorage.getItem('keepy_pct')||'10');
+
+const CAT_COLORS={'Comida':'#ffb74d','Transporte':'#4fc3f7','Entretenimiento':'#ce93d8','Salud':'#ef9a9a','Hogar':'#69f0ae','Ropa':'#f48fb1','Educación':'#80cbc4','Servicios':'#90a4ae','Otros':'#78909c'};
+const colorOf=cat=>CAT_COLORS[cat]||'#'+Math.abs(cat.split('').reduce((a,c)=>a*31+c.charCodeAt(0)|0,0)).toString(16).padStart(6,'0').slice(0,6);
+const fmt=n=>'$'+Math.abs(n).toLocaleString('es-MX',{minimumFractionDigits:0,maximumFractionDigits:0});
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+const save=()=>{
+  localStorage.setItem('keepy_gastos',JSON.stringify(gastos));
+  localStorage.setItem('keepy_cc',JSON.stringify(conceptoCat));
+  localStorage.setItem('keepy_ing',ingreso);
+  localStorage.setItem('keepy_pct',ahorroPct);
+};
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+function actualizarTodo(){
+  ingreso=parseFloat(document.getElementById('ingresoInput').value)||0;
+  ahorroPct=parseInt(document.getElementById('ahorroSlider').value);
+  document.getElementById('pctBadge').textContent=ahorroPct+'%';
+  const aho=ingreso*ahorroPct/100;
+  const dispB=ingreso-aho;
+  const totalG=gastos.reduce((s,g)=>s+g.monto,0);
+  const dispR=dispB-totalG;
+  const saldo=ingreso-aho-totalG;
+  document.getElementById('pfSave').style.width=ahorroPct+'%';
+  document.getElementById('pfSpend').style.width=(100-ahorroPct)+'%';
+  document.getElementById('pfSaveAmt').textContent=fmt(aho);
+  document.getElementById('pfSpendAmt').textContent=fmt(dispB);
+  document.getElementById('pfNoteAmt').textContent=fmt(aho);
+  document.getElementById('bIngreso').textContent=fmt(ingreso);
+  document.getElementById('bAhorro').textContent=fmt(aho);
+  document.getElementById('bGastos').textContent=fmt(totalG);
+  const dispEl=document.getElementById('bDisp');
+  dispEl.textContent=fmt(Math.max(0,dispR));
+  dispEl.className='bv '+(dispR<0?'red':dispR<dispB*0.1?'warm':'blue');
+  const sEl=document.getElementById('bSaldo');
+  sEl.textContent=(saldo<0?'-':'')+fmt(saldo);
+  sEl.style.color=saldo<0?'var(--red)':saldo<ingreso*0.05?'var(--warm)':'var(--green)';
+  save();
+}
+
+function renderGastos(){
+  const el=document.getElementById('gastosList');
+  if(!gastos.length){el.innerHTML='<div class="empty-state">Registra tu primer gasto con voz 🎙️</div>';return;}
+  el.innerHTML=[...gastos].reverse().slice(0,20).map((g,i)=>`
+    <div class="gasto-item">
+      <div class="gasto-dot" style="background:${colorOf(g.categoria)}"></div>
+      <div class="gasto-info">
+        <div class="gasto-concepto">${g.concepto}</div>
+        <div class="gasto-meta">${g.categoria} · ${g.fecha}</div>
+      </div>
+      <div class="gasto-monto">${fmt(g.monto)}</div>
+      <button class="gasto-del" onclick="eliminar(${gastos.length-1-i})">×</button>
+    </div>`).join('');
+}
+
+function renderChart(){
+  const cats={};
+  gastos.forEach(g=>cats[g.categoria]=(cats[g.categoria]||0)+g.monto);
+  const el=document.getElementById('chartBars');
+  if(!Object.keys(cats).length){el.innerHTML='<div class="empty-state">Sin gastos aún</div>';return;}
+  const max=Math.max(...Object.values(cats));
+  el.innerHTML=Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([cat,val])=>`
+    <div class="bar-row">
+      <div class="bar-label">${cat}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${val/max*100}%;background:${colorOf(cat)}"></div></div>
+      <div class="bar-val">${fmt(val)}</div>
+    </div>`).join('');
+}
+
+function eliminar(idx){gastos.splice(idx,1);save();renderGastos();renderChart();actualizarTodo();}
+
+function agregarGasto(monto,concepto,categoria){
+  conceptoCat[concepto.toLowerCase()]=categoria;
+  const hoy=new Date();
+  gastos.push({monto,concepto,categoria,fecha:hoy.toLocaleDateString('es-MX',{day:'2-digit',month:'short'})});
+  save();renderGastos();renderChart();actualizarTodo();actualizarSelect();
+  toast('✅ '+cap(concepto)+' — '+fmt(monto)+' en '+categoria);
+}
+
+function getCats(){
+  const base=Object.keys(CAT_COLORS);
+  const custom=[...new Set(gastos.map(g=>g.categoria))].filter(c=>!base.includes(c));
+  return [...base,...custom];
+}
+function actualizarSelect(){
+  const sel=document.getElementById('mCat');
+  sel.innerHTML='<option value="">— selecciona —</option>'+
+    getCats().map(c=>`<option value="${c}">${c}</option>`).join('')+
+    '<option value="__new">+ Nueva categoría...</option>';
+  sel.onchange=()=>{document.getElementById('mCatNew').style.display=sel.value==='__new'?'block':'none';};
+}
+function abrirModal(){document.getElementById('modalOverlay').classList.add('open');}
+function cerrarModal(){document.getElementById('modalOverlay').classList.remove('open');document.getElementById('mCatNew').style.display='none';}
+function guardarManual(){
+  const monto=parseFloat(document.getElementById('mMonto').value);
+  const concepto=document.getElementById('mConcepto').value.trim();
+  let cat=document.getElementById('mCat').value;
+  if(cat==='__new')cat=document.getElementById('mCatNew').value.trim();
+  if(!monto||!concepto||!cat){alert('Completa todos los campos');return;}
+  agregarGasto(monto,concepto,cat);
+  cerrarModal();
+  document.getElementById('mMonto').value='';
+  document.getElementById('mConcepto').value='';
+}
+
+// ── VOZ — sesiones cortas, sin TTS, comando simple ────────────
+let keepyActiva=false,vStep=0,vMonto=null,vConcepto=null;
+let sesionActiva=false;
+
+function setDebug(txt,paso){
+  document.getElementById('debugTxt').textContent='"'+txt+'"';
+  document.getElementById('debugPaso').textContent='Paso: '+paso;
+}
+
+// Escucha UNA frase y devuelve el resultado via callback
+function escucharUnaFrase(callback){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){setEstado('Navegador no compatible','rojo');return;}
+  
+  const r=new SR();
+  r.lang='es-MX';
+  r.continuous=false;
+  r.interimResults=false;
+  r.maxAlternatives=3;
+
+  r.onresult=e=>{
+    const alts=[];
+    for(let i=0;i<e.results[0].length;i++) alts.push(e.results[0][i].transcript.trim().toLowerCase());
+    const txt=alts.join(' ');
+    setDebug(alts[0],'escuchado');
+    callback(txt, alts);
+  };
+  r.onerror=e=>{
+    setDebug('error: '+e.error, 'error');
+    if(e.error==='no-speech'){
+      if(vStep===0 && keepyActiva) setTimeout(()=>escucharComando(),200);
+      else callback('__timeout__',[]);
+    } else if(e.error==='not-allowed'){
+      ponerDormida();
+    } else if(e.error==='aborted'){
+      // Chrome abortó — esperar más tiempo y reintentar
+      if(keepyActiva && vStep===0) setTimeout(()=>escucharComando(), 1000);
+    } else {
+      if(keepyActiva && vStep===0) setTimeout(()=>escucharComando(), 800);
+    }
+  };
+  r.onend=()=>{
+    setDebug('sesión cerrada','onend');
+  };
+  
+  try{ 
+    r.start();
+    setDebug('micrófono abierto OK','activo');
+  } catch(e){ 
+    setDebug('catch al iniciar: '+e.message,'error');
+    setTimeout(()=>{ if(keepyActiva && vStep===0) escucharComando(); }, 1000);
+  }
+}
+
+// Escucha permanentemente el comando de activación
+function escucharComando(){
+  if(!keepyActiva) { setDebug('escucharComando cancelado — keepyActiva=false','cancelado'); return; }
+  setEstado('Escuchando... di "Keepy"','verde');
+  setDebug('abriendo micrófono...','esperando comando');
+  escucharUnaFrase((txt, alts)=>{
+    if(!keepyActiva) return;
+    setDebug(txt,'esperando comando');
+    const todosLosTextos = alts.join(' ');
+    const norm = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    const t = norm(todosLosTextos);
+    // Detectar "Keepy" por fonética — todas sus variaciones
+    const palabras = t.split(/\s+/);
+    const tieneKeepy = palabras.some(p =>
+      ['keepy','kepy','kipy','kippy','keep','creepy','cripy','cripi','kipi',
+       'quipy','quipi','quepi','keipy','keypy','kepi','gipy','gipi','jipi',
+       'keipi','qipy','kypi','kiphi','keepi',
+       'hippie','hippy','hipy','hippi','jippi','jippy','yipi','yippy',
+       'kiphi','gippi','ghipy'].includes(p) ||
+      /^[kcqgh][iey]{0,2}p[iy]?$/.test(p) ||
+      /^[kcqgh][iey]p/.test(p)
+    );
+    if(tieneKeepy){
+      iniciarRegistro();
+    } else {
+      setTimeout(()=>escucharComando(), 200);
+    }
+  });
+}
+
+// Flujo de registro paso a paso
+function iniciarRegistro(){
+  vStep=1; vMonto=null; vConcepto=null;
+  setVFeedback(1,'<strong>Monto</strong>');
+  setEstado('🎙 Di el monto','verde');
+  mostrarPrompt('💰 Monto');
+  hablarCorto('Monto');
+  setTimeout(()=>{
+    escucharUnaFrase((txt,alts)=>{
+      const todosLosTextos=alts.join(' ');
+      setDebug(txt,'esperando monto');
+      const n=extraerNum(todosLosTextos);
+      if(n){
+        vMonto=n;
+        setVFeedback(2,'Monto <strong>'+fmt(n)+'</strong> — Concepto');
+        setEstado('🎙 Di el concepto','verde');
+        mostrarPrompt('🛒 Concepto');
+        hablarCorto('Concepto');
+        setTimeout(()=>escucharConcepto(), 800);
+      } else {
+        setEstado('No entendí — di el monto','rojo');
+        mostrarPrompt('❌ Di solo el número');
+        setTimeout(()=>iniciarRegistro(), 1200);
+      }
+    });
+  }, 900);
+}
+
+function escucharConcepto(){
+  escucharUnaFrase((txt,alts)=>{
+    const t=alts[0].replace(/pesos|peso|mxn/gi,'').trim();
+    setDebug(t,'esperando concepto');
+    vConcepto=t;
+    const cg=conceptoCat[t.toLowerCase()];
+    if(cg){
+      finalizarRegistro(vMonto, cap(t), cg);
+    } else {
+      vStep=3;
+      setVFeedback(3,'Concepto: <strong>'+cap(t)+'</strong> — Categoría');
+      setEstado('🎙 Di la categoría','verde');
+      mostrarPrompt('📂 Categoría');
+      hablarCorto('Categoría');
+      setTimeout(()=>escucharCategoria(), 800);
+    }
+  });
+}
+
+function escucharCategoria(){
+  escucharUnaFrase((txt,alts)=>{
+    const t=alts[0].trim();
+    setDebug(t,'esperando categoría');
+    let cat=cap(t);
+    const norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    const match=getCats().find(c=>norm(t).includes(norm(c))||norm(c).includes(norm(t)));
+    if(match) cat=match;
+    finalizarRegistro(vMonto, cap(vConcepto), cat);
+  });
+}
+
+function finalizarRegistro(monto, concepto, categoria){
+  agregarGasto(monto, concepto, categoria);
+  vStep=0;
+  setVFeedback(0);
+  mostrarPrompt('');
+  setEstado('✅ Registrado — di "Keepy" para otro gasto','verde');
+  setDebug('gasto registrado, reiniciando en 3s...','finalizando');
+  // 3 segundos — Chrome necesita tiempo para liberar completamente el mic
+  setTimeout(()=>{
+    if(keepyActiva){
+      setDebug('llamando escucharComando...','reiniciando');
+      setEstado('Escuchando... di "Keepy"','verde');
+      setTimeout(()=>escucharComando(), 500);
+    } else {
+      setDebug('keepyActiva es FALSE — ese es el problema','error');
+    }
+  }, 3000);
+}
+
+function hablarCorto(t){
+  if(!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(t);
+  u.lang='es-MX'; u.rate=1.1; u.volume=0.8;
+  window.speechSynthesis.speak(u);
+}
+
+function mostrarPrompt(msg){
+  document.getElementById('vfMsg').innerHTML=msg;
+  document.getElementById('vozFeedback').classList.toggle('visible', msg!=='');
+}
+
+function ponerDormida(){
+  keepyActiva=false;vStep=0;setVFeedback(0);mostrarPrompt('');
+  setEstado('Dormida — toca para reactivar','rojo');
+  const btn=document.getElementById('keepyBtn');
+  btn.classList.remove('activo');
+  document.getElementById('kaIcon').textContent='😴';
+  document.getElementById('kaTitulo').textContent='Keepy está dormida';
+  document.getElementById('kaSub').innerHTML='Toca aquí para reactivarla<br>y sigue registrando gastos.';
+  // El onclick del HTML ya apunta a activarKeepy() — funciona solo
+}
+
+function activarKeepy(){
+  if(keepyActiva) return; // ya activa
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){setEstado('Usa Chrome para activar la voz','rojo');return;}
+  keepyActiva=true;
+  const btn=document.getElementById('keepyBtn');
+  btn.classList.add('activo');
+  // NO desactivar onclick — si se duerme necesita poder reactivarse
+  document.getElementById('kaIcon').textContent='👂';
+  document.getElementById('kaTitulo').textContent='Keepy está escuchando';
+  document.getElementById('kaSub').innerHTML='Di <strong>"Keepy"</strong> cuando tengas un gasto.<br>No necesitas tocar nada más.';
+  setEstado('Escuchando... di "Keepy"','verde');
+  escucharComando();
+}
+
+function extraerNum(txt){
+  const norm=txt.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const d=norm.match(/\d[\d,.]*/);
+  if(d)return parseFloat(d[0].replace(/,/g,''));
+  const map={cero:0,un:1,uno:1,dos:2,tres:3,cuatro:4,cinco:5,seis:6,siete:7,ocho:8,nueve:9,
+    diez:10,once:11,doce:12,trece:13,catorce:14,quince:15,dieciseis:16,diecisiete:17,
+    dieciocho:18,diecinueve:19,veinte:20,veintiuno:21,veintidos:22,veintitres:23,
+    veinticuatro:24,veinticinco:25,veintiseis:26,veintisiete:27,veintiocho:28,veintinueve:29,
+    treinta:30,cuarenta:40,cincuenta:50,sesenta:60,setenta:70,ochenta:80,noventa:90,
+    cien:100,ciento:100,doscientos:200,trescientos:300,cuatrocientos:400,quinientos:500,
+    seiscientos:600,setecientos:700,ochocientos:800,novecientos:900,mil:1000};
+  let n=0,c=0;
+  norm.split(/\s+/).forEach(w=>{
+    const v=map[w.replace(/[^a-z]/gi,'').toLowerCase()];
+    if(v!=null){if(v>=1000){n=(n||1)*v;c=0;}else if(v>=100){c=(c||1)*v;}else c+=v;}
+  });
+  n+=c; return n>0?n:null;
+}
+
+function init(){
+  document.getElementById('ingresoInput').value=ingreso||'';
+  document.getElementById('ahorroSlider').value=ahorroPct;
+  actualizarTodo();renderGastos();renderChart();actualizarSelect();
+}
+init();
+
+function setVFeedback(step,msg){
+  const fb=document.getElementById('vozFeedback');
+  if(step===0){fb.classList.remove('visible');return;}
+  fb.classList.add('visible');
+  [1,2,3].forEach(i=>{
+    const el=document.getElementById('vfs'+i);
+    el.className='vf-step'+(i<step?' hecho':i===step?' activo':'');
+  });
+  if(msg) document.getElementById('vfMsg').innerHTML=msg;
+}
+
+function setEstado(txt,dotClass){
+  document.getElementById('kaEstado').textContent=txt;
+  if(dotClass) document.getElementById('kaDot').className='ka-dot '+dotClass;
+}
+
+
+
+
+function init(){
+  document.getElementById('ingresoInput').value=ingreso||'';
+  document.getElementById('ahorroSlider').value=ahorroPct;
+  actualizarTodo();renderGastos();renderChart();actualizarSelect();
+}
+init();
+</script>
+</body>
+</html>
